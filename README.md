@@ -43,6 +43,7 @@ quelques choix sensibles, et l'IA leur donne une forme.**
 - [Qualité et tests](#qualité-et-tests)
 - [Structure du projet](#structure-du-projet)
 - [Feuille de route](#feuille-de-route)
+- [Auteurs](#auteurs)
 
 ---
 
@@ -309,6 +310,18 @@ docs/                            Architecture, déploiement, captures
 - [ ] Choix multiples par étape (deux couleurs, deux atmosphères…)
 - [ ] Interface multilingue (anglais, arabe)
 - [ ] Nom définitif (*Sans Mots* est un nom de travail, à vérifier juridiquement)
+
+---
+
+## Auteurs
+
+| | Rôle |
+|---|---|
+| **[Hichem](https://github.com/HichemHa)** | Idée, vision du projet, direction produit et artistique, déploiement |
+| **Claude** (Anthropic), via Claude Code | Conception technique, développement, tests et documentation, en binôme avec Hichem |
+
+Ce projet est né d'une collaboration entre une personne et une IA : la vision et les
+choix sont humains, l'écriture du code a été partagée.
 
 ---
 
