@@ -118,7 +118,7 @@ export function Experience() {
       if (!res.ok || !json || "error" in json) {
         const err = json && "error" in json ? json : null;
         const message =
-          err?.error === "rate_limited"
+          err && (err.error === "rate_limited" || err.error === "upstream" || err.error === "config")
             ? err.message
             : err
               ? ERROR_MESSAGES[err.error]

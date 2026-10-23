@@ -17,7 +17,7 @@ export function createCloudflareProvider(env: NodeJS.ProcessEnv): ImageProvider 
   return {
     id: "cloudflare",
     isDemo: false,
-    async generate({ prompt, request, signal }) {
+    async generate({ prompt, signal }) {
       if (!accountId || !token) {
         throw new ProviderError(
           "config",
@@ -32,10 +32,10 @@ export function createCloudflareProvider(env: NodeJS.ProcessEnv): ImageProvider 
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
+          // Le schéma de FLUX.1 schnell n'accepte que `prompt` et `steps` (max 8).
           body: JSON.stringify({
             prompt: prompt.slice(0, 2048),
             steps: 8,
-            seed: request.seed,
           }),
           signal,
         },

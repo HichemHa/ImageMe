@@ -51,7 +51,7 @@ export async function errorFromResponse(
   // Journalisé côté serveur uniquement, jamais renvoyé au navigateur.
   console.error(`[${provider}] HTTP ${res.status}: ${detail}`);
 
-  if (res.status === 401 || res.status === 403) {
+  if (res.status === 401 || res.status === 403 || res.status === 404) {
     return new ProviderError("config", "Clé du fournisseur d'images invalide.");
   }
   if (res.status === 429) {
@@ -60,5 +60,9 @@ export async function errorFromResponse(
   if (res.status === 400 && /safety|policy|moderation|nsfw/i.test(detail)) {
     return new ProviderError("rejected", "Le fournisseur a refusé cette image.");
   }
-  return new ProviderError("upstream", "Le fournisseur d'images n'a pas répondu correctement.");
+  // Le code HTTP (sans le détail) aide au diagnostic sans rien exposer.
+  return new ProviderError(
+    "upstream",
+    `Le fournisseur d'images n'a pas répondu correctement (code ${res.status}).`,
+  );
 }

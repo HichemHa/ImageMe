@@ -77,7 +77,7 @@ export async function POST(request: Request) {
         error: err.code,
         message:
           err.code === "config"
-            ? "La génération d'images n'est pas correctement configurée."
+            ? "La génération d'images n'est pas correctement configurée (clé ou identifiant de compte)."
             : err.message,
       });
     }

@@ -94,7 +94,7 @@ describe("fournisseurs réels (réponses simulées)", () => {
     expect(init.headers.Authorization).toBe("Bearer sk-test");
   });
 
-  it("Cloudflare : transmet la graine et décode la réponse", async () => {
+  it("Cloudflare : n'envoie que les champs acceptés par le modèle", async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(JSON.stringify({ success: true, result: { image: "BBBB" } }), { status: 200 }),
     );
@@ -107,7 +107,7 @@ describe("fournisseurs réels (réponses simulées)", () => {
     expect(img).toEqual({ base64: "BBBB", mimeType: "image/jpeg" });
     const [url, init] = fetchMock.mock.calls[0];
     expect(url).toContain("/accounts/acc/ai/run/@cf/black-forest-labs/flux-1-schnell");
-    expect(JSON.parse(init.body).seed).toBe(7);
+    expect(Object.keys(JSON.parse(init.body)).sort()).toEqual(["prompt", "steps"]);
   });
 
   it("normalise les erreurs sans exposer le détail", async () => {
