@@ -1,0 +1,112 @@
+@import "tailwindcss";
+
+/*
+ * Identité visuelle : un espace sombre et feutré, une typographie à
+ * empattements pour la voix poétique, une sans-serif discrète pour l'interface.
+ * Les couleurs d'ambiance (--amb-*) suivent les choix de l'utilisateur.
+ */
+:root {
+  --ink: #0d0c11;
+  --ink-raised: #16141c;
+  --paper: #ece7df;
+  --muted: #a7a1ac;
+  --faint: #6f6a76;
+  --line: rgb(236 231 223 / 0.12);
+  --glow: #c9b8ff;
+
+  --amb-1: #2a2350;
+  --amb-2: #4b2f5e;
+  --amb-3: #1d3a52;
+}
+
+@theme inline {
+  --color-ink: var(--ink);
+  --color-ink-raised: var(--ink-raised);
+  --color-paper: var(--paper);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-line: var(--line);
+  --color-glow: var(--glow);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-fraunces), ui-serif, Georgia, serif;
+}
+
+html {
+  color-scheme: dark;
+  background: var(--ink);
+}
+
+body {
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-sans);
+}
+
+::selection {
+  background: rgb(201 184 255 / 0.35);
+}
+
+:focus-visible {
+  outline: 2px solid var(--glow);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* ---------- Animations ---------- */
+
+@keyframes drift {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  33% { transform: translate3d(6%, -4%, 0) scale(1.08); }
+  66% { transform: translate3d(-5%, 5%, 0) scale(0.95); }
+  100% { transform: translate3d(0, 0, 0) scale(1); }
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(0.92); opacity: 0.75; }
+  50% { transform: scale(1.06); opacity: 1; }
+}
+
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(12px); filter: blur(4px); }
+  to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+
+@keyframes reveal {
+  from { opacity: 0; transform: scale(0.985); filter: blur(18px) saturate(0.6); }
+  to { opacity: 1; transform: scale(1); filter: blur(0) saturate(1); }
+}
+
+@keyframes float-up {
+  from { transform: translateY(6px); opacity: 0.3; }
+  to { transform: translateY(-6px); opacity: 1; }
+}
+
+@keyframes slide-x {
+  from { transform: translateX(-6px); }
+  to { transform: translateX(6px); }
+}
+
+.animate-drift { animation: drift 28s ease-in-out infinite; }
+.animate-breathe { animation: breathe 5s ease-in-out infinite; }
+.animate-rise { animation: rise-in 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.animate-reveal { animation: reveal 1.6s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.animate-float { animation: float-up 2.6s ease-in-out infinite alternate; }
+.animate-slide { animation: slide-x 2.2s ease-in-out infinite alternate; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* Masqué visuellement mais lisible par les lecteurs d'écran. */
+.sr-only-focusable:not(:focus) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
