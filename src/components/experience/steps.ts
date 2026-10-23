@@ -7,6 +7,8 @@ export interface StepConfig {
   layout: "grid" | "list";
   /** Libellé court utilisé dans le récapitulatif. */
   short: string;
+  /** Exemple affiché dans la zone de texte « Autre… ». */
+  placeholder: string;
 }
 
 export const STEPS: StepConfig[] = [
@@ -16,6 +18,7 @@ export const STEPS: StepConfig[] = [
     hint: "Ce sont des points de départ, pas des réponses. Tu peux aussi ne rien choisir.",
     layout: "list",
     short: "Point de départ",
+    placeholder: "Ce que tu ressens, comme ça vient… (dans la langue de ton choix)",
   },
   {
     category: "shape",
@@ -23,6 +26,7 @@ export const STEPS: StepConfig[] = [
     hint: "Pas besoin de savoir pourquoi.",
     layout: "grid",
     short: "Forme",
+    placeholder: "Un objet, un lieu, une silhouette, un souvenir…",
   },
   {
     category: "color",
@@ -30,6 +34,7 @@ export const STEPS: StepConfig[] = [
     hint: "Laisse ton regard choisir.",
     layout: "grid",
     short: "Couleurs",
+    placeholder: "Des couleurs, une lumière, un moment de la journée…",
   },
   {
     category: "texture",
@@ -37,6 +42,7 @@ export const STEPS: StepConfig[] = [
     hint: "Ce que ce serait, peut-être, au toucher.",
     layout: "grid",
     short: "Matière",
+    placeholder: "Une matière, une sensation au toucher…",
   },
   {
     category: "atmosphere",
@@ -44,6 +50,7 @@ export const STEPS: StepConfig[] = [
     hint: "L'air que l'on respirerait dans cette image.",
     layout: "grid",
     short: "Atmosphère",
+    placeholder: "Un air, un son, une saison, un moment…",
   },
 ];
 

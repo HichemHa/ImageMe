@@ -12,6 +12,7 @@ const base: GenerationRequest = {
     style: "photo",
     composition: "centre",
   },
+  texts: {},
   adjustments: [],
   seed: 42,
 };

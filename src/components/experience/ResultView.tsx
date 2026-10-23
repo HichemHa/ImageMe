@@ -210,8 +210,8 @@ export function ResultView({
             {creation.prompt}
           </p>
           <p className="mt-2 text-xs">
-            Seuls tes choix (sous forme de mots-clés) sont transmis. Aucune donnée
-            personnelle.
+            Seuls tes choix (et tes mots, si tu en as écrit) sont transmis, puis
+            oubliés. Aucune donnée personnelle n&apos;est demandée.
           </p>
         </details>
       </div>

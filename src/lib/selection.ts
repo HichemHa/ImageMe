@@ -12,11 +12,28 @@ import { createRng, randomSeed } from "./rng";
  *  - "random" : laisser le hasard choisir,
  *  - null : étape passée / pas de réponse.
  */
-export type Choice = string | "random" | null;
+export type Choice = string | "random" | "custom" | null;
 
 export const RANDOM = "random" as const;
 
-export type Selection = Record<CategoryId, Choice>;
+/** « Autre… » : l'utilisateur s'exprime avec ses propres mots, dans sa langue. */
+export const CUSTOM = "custom" as const;
+
+/** Catégories qui acceptent une réponse libre (toutes sauf le style). */
+export type TextCategory = Exclude<CategoryId, "style">;
+export const TEXT_CATEGORIES: TextCategory[] = [
+  "feeling",
+  "shape",
+  "color",
+  "texture",
+  "atmosphere",
+];
+export type CustomTexts = Partial<Record<TextCategory, string>>;
+
+/** Longueur maximale d'une réponse libre : quelques mots, pas un récit. */
+export const MAX_TEXT_LENGTH = 120;
+
+export type Selection = Record<CategoryId, Choice> & { texts: CustomTexts };
 
 export const EMPTY_SELECTION: Selection = {
   feeling: null,
@@ -25,9 +42,27 @@ export const EMPTY_SELECTION: Selection = {
   texture: null,
   atmosphere: null,
   style: RANDOM,
+  texts: {},
 };
 
-/** Choix concrets envoyés au serveur : un identifiant ou null. */
+/**
+ * Nettoie un texte libre : caractères de contrôle retirés, espaces
+ * normalisés, guillemets droits remplacés (ils délimitent le texte dans le
+ * prompt), longueur bornée.
+ */
+export function sanitizeText(input: unknown, max = MAX_TEXT_LENGTH): string {
+  if (typeof input !== "string") return "";
+  return input
+    .normalize("NFC")
+    .replace(/[\u0000-\u001f\u007f-\u009f]/g, " ")
+    .replace(/"/g, "'")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, max)
+    .trim();
+}
+
+/** Choix concrets envoyés au serveur : un identifiant, "custom" ou null. */
 export interface ResolvedChoices {
   feeling: string | null;
   shape: string | null;
@@ -40,6 +75,8 @@ export interface ResolvedChoices {
 
 export interface GenerationRequest {
   choices: ResolvedChoices;
+  /** Mots de l'utilisateur, pour chaque catégorie valant "custom". */
+  texts: CustomTexts;
   adjustments: string[];
   seed: number;
 }
@@ -55,13 +92,20 @@ export type RandomPicks = Partial<Record<CategoryId, true>>;
 export function resolveSelection(
   selection: Selection,
   seed: number = randomSeed(),
-): { choices: ResolvedChoices; randomPicks: RandomPicks } {
+): { choices: ResolvedChoices; texts: CustomTexts; randomPicks: RandomPicks } {
   const rng = createRng(seed);
   const randomPicks: RandomPicks = {};
+  const texts: CustomTexts = {};
 
   const pick = (category: CategoryId): string | null => {
     const value = selection[category];
     const options = CATEGORIES[category];
+    if (value === CUSTOM && category !== "style") {
+      const text = sanitizeText(selection.texts?.[category]);
+      if (!text) return null;
+      texts[category] = text;
+      return CUSTOM;
+    }
     if (value === RANDOM) {
       randomPicks[category] = true;
       // Le hasard ne choisit jamais « explorer sans sentiment » à la place
@@ -86,6 +130,7 @@ export function resolveSelection(
       style,
       composition: rng.pick(COMPOSITIONS).id,
     },
+    texts,
     randomPicks,
   };
 }
@@ -94,8 +139,9 @@ const MAX_ADJUSTMENTS = 4;
 
 /**
  * Valide strictement une requête de génération venant du navigateur.
- * Seuls des identifiants connus sont acceptés : aucun texte libre n'atteint
- * le fournisseur d'IA.
+ * Seuls des identifiants connus sont acceptés, plus de courts textes libres
+ * (« Autre… ») nettoyés et bornés, uniquement pour les catégories qui valent
+ * "custom".
  */
 export function parseGenerationRequest(
   input: unknown,
@@ -109,9 +155,19 @@ export function parseGenerationRequest(
     return { ok: false, error: "Choix manquants." };
   }
 
+  const rawTexts =
+    raw.texts && typeof raw.texts === "object" ? (raw.texts as Record<string, unknown>) : {};
+  const texts: CustomTexts = {};
+
   const optional = (category: CategoryId): string | null | Error => {
     const v = rawChoices[category];
     if (v === null || v === undefined) return null;
+    if (v === CUSTOM && category !== "style") {
+      const text = sanitizeText(rawTexts[category]);
+      if (!text) return new Error(`${category} (texte vide)`);
+      texts[category] = text;
+      return CUSTOM;
+    }
     if (typeof v === "string" && CATEGORIES[category].some((o) => o.id === v)) {
       return v;
     }
@@ -172,6 +228,7 @@ export function parseGenerationRequest(
         style: style as string,
         composition,
       },
+      texts,
       adjustments: [...new Set(rawAdjustments as string[])],
       seed,
     },

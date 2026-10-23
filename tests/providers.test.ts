@@ -15,6 +15,7 @@ const request: GenerationRequest = {
     style: "abstrait",
     composition: "centre",
   },
+  texts: {},
   adjustments: [],
   seed: 7,
 };

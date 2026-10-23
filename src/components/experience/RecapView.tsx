@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { findOption, STYLES } from "@/lib/options";
-import { RANDOM, type Selection } from "@/lib/selection";
+import { CUSTOM, RANDOM, type Selection } from "@/lib/selection";
 import { Button } from "../Button";
 import { OptionVisual } from "../OptionVisual";
 import { ProgressDots } from "./ProgressDots";
@@ -24,7 +24,11 @@ export function RecapView({
   const headingRef = useRef<HTMLHeadingElement>(null);
   useEffect(() => headingRef.current?.focus(), []);
 
-  const nothingChosen = STEPS.every((s) => selection[s.category] === null);
+  const nothingChosen = STEPS.every(
+    (s) =>
+      selection[s.category] === null ||
+      (selection[s.category] === CUSTOM && !selection.texts[s.category]?.trim()),
+  );
 
   return (
     <section aria-labelledby="recap-title" className="animate-rise">
@@ -47,8 +51,14 @@ export function RecapView({
         {STEPS.map((step, i) => {
           const value = selection[step.category];
           const option = value && value !== RANDOM ? findOption(step.category, value) : undefined;
-          const label =
-            value === RANDOM ? "Le hasard choisira" : option ? option.label : "Laissé ouvert";
+          const ownWords = value === CUSTOM ? selection.texts[step.category]?.trim() : undefined;
+          const label = ownWords
+            ? `« \u2068${ownWords}\u2069 »`
+            : value === RANDOM
+              ? "Le hasard choisira"
+              : option
+                ? option.label
+                : "Laissé ouvert";
           return (
             <li key={step.category} className="flex items-center gap-4 px-4 py-3 sm:px-5">
               <span className="h-9 w-9 shrink-0 text-paper/80">
@@ -59,7 +69,7 @@ export function RecapView({
                     aria-hidden
                     className={`flex h-full w-full items-center justify-center rounded-full border border-dashed ${value ? "border-paper/40" : "border-paper/15"} text-xs text-faint`}
                   >
-                    {value === RANDOM ? "?" : ""}
+                    {value === RANDOM ? "?" : ownWords ? "✎" : ""}
                   </span>
                 )}
               </span>
@@ -67,7 +77,9 @@ export function RecapView({
                 <span className="block text-xs uppercase tracking-[0.18em] text-faint">
                   {step.short}
                 </span>
-                <span className={`block line-clamp-2 ${option ? "text-paper" : "text-muted italic"}`}>
+                <span
+                  className={`block line-clamp-2 ${option || ownWords ? "text-paper" : "text-muted italic"} ${ownWords ? "font-serif" : ""}`}
+                >
                   {label}
                 </span>
               </span>

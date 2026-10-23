@@ -3,16 +3,18 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { GenerateErrorResponse, GenerateResponse } from "@/lib/api-types";
-import { findColor } from "@/lib/options";
+import { findColor, type CategoryId } from "@/lib/options";
 import { randomSeed } from "@/lib/rng";
 import {
   EMPTY_SELECTION,
   RANDOM,
   resolveSelection,
   type Choice,
+  type CustomTexts,
   type RandomPicks,
   type ResolvedChoices,
   type Selection,
+  type TextCategory,
 } from "@/lib/selection";
 import { AmbientBackground } from "../AmbientBackground";
 import { Button } from "../Button";
@@ -44,7 +46,11 @@ function readStored(): Stored | null {
     const parsed = JSON.parse(raw) as Stored;
     if (typeof parsed.step !== "number" || !parsed.selection) return null;
     return {
-      selection: { ...EMPTY_SELECTION, ...parsed.selection },
+      selection: {
+        ...EMPTY_SELECTION,
+        ...parsed.selection,
+        texts: { ...parsed.selection.texts },
+      },
       step: Math.max(0, Math.min(parsed.step, RECAP_STEP)),
     };
   } catch {
@@ -91,6 +97,7 @@ export function Experience() {
 
   async function generate(
     choices: ResolvedChoices,
+    texts: CustomTexts,
     randomPicks: RandomPicks,
     adjustments: string[],
     from: Phase,
@@ -101,13 +108,13 @@ export function Experience() {
     const seed = randomSeed();
     setPhase({ kind: "generating", from });
 
-    const retry = () => void generate(choices, randomPicks, adjustments, from);
+    const retry = () => void generate(choices, texts, randomPicks, adjustments, from);
 
     try {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ choices, adjustments, seed }),
+        body: JSON.stringify({ choices, texts, adjustments, seed }),
         signal: controller.signal,
       });
       const json = (await res.json().catch(() => null)) as
@@ -131,6 +138,7 @@ export function Experience() {
         ...json,
         id: crypto.randomUUID(),
         choices,
+        texts,
         adjustments,
         randomPicks,
         createdAt: Date.now(),
@@ -154,14 +162,17 @@ export function Experience() {
     if (phase.kind === "generating") setPhase(phase.from);
   };
 
-  const setChoice = (category: keyof Selection, value: Choice) =>
+  const setChoice = (category: CategoryId, value: Choice) =>
     setSelection((s) => ({ ...s, [category]: value }));
+
+  const setText = (category: TextCategory, text: string) =>
+    setSelection((s) => ({ ...s, texts: { ...s.texts, [category]: text } }));
 
   const goTo = (next: number) => setPhase({ kind: "explore", step: next });
 
   const createFromSelection = () => {
-    const { choices, randomPicks } = resolveSelection(selection);
-    void generate(choices, randomPicks, [], { kind: "explore", step: RECAP_STEP });
+    const { choices, texts, randomPicks } = resolveSelection(selection);
+    void generate(choices, texts, randomPicks, [], { kind: "explore", step: RECAP_STEP });
   };
 
   const surprise = () => {
@@ -174,8 +185,9 @@ export function Experience() {
       atmosphere: RANDOM,
       style: RANDOM,
     };
-    const { choices, randomPicks } = resolveSelection(next);
+    const { choices, texts, randomPicks } = resolveSelection(next);
     setSelection({
+      texts: selection.texts,
       feeling: selection.feeling,
       shape: choices.shape,
       color: choices.color,
@@ -183,7 +195,7 @@ export function Experience() {
       atmosphere: choices.atmosphere,
       style: selection.style,
     });
-    void generate(choices, randomPicks, [], { kind: "result" });
+    void generate(choices, texts, randomPicks, [], { kind: "result" });
   };
 
   const restart = () => {
@@ -212,7 +224,9 @@ export function Experience() {
           <StepView
             stepIndex={phase.step}
             value={selection[STEPS[phase.step].category]}
+            text={selection.texts[STEPS[phase.step].category] ?? ""}
             onChoose={(id) => setChoice(STEPS[phase.step].category, id)}
+            onText={(text) => setText(STEPS[phase.step].category, text)}
             onNext={() => goTo(phase.step + 1)}
             onBack={() => (phase.step === 0 ? router.push("/") : goTo(phase.step - 1))}
             onRandom={() => {
@@ -252,7 +266,9 @@ export function Experience() {
             creation={current}
             hasPrevious={creations.length > 1}
             onVariation={(adjustments) =>
-              void generate(current.choices, current.randomPicks, adjustments, { kind: "result" })
+              void generate(current.choices, current.texts, current.randomPicks, adjustments, {
+                kind: "result",
+              })
             }
             onSurprise={surprise}
             onEdit={() => goTo(RECAP_STEP)}

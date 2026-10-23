@@ -130,6 +130,7 @@ que l'application ne fait pas.
 |---|---|
 | **Parcours guidé** | 7 points de départ (dont « explorer sans choisir de sentiment »), 7 formes, 6 palettes, 7 matières, 7 atmosphères, 6 styles artistiques |
 | **Toujours une issue** | « Passer », « Je ne sais pas », « Laisser le hasard choisir » à chaque étape ; le hasard indique ensuite ce qu'il a choisi |
+| **Avec ses propres mots** | Une option « Autre… » à chaque étape ouvre une zone de texte : quelques mots, dans la langue de son choix (français, arabe, anglais…), traduits automatiquement pour l'IA |
 | **Prompt artistique** | Généré à partir des choix : sujet, ressenti suggéré (jamais littéral), matière, palette, atmosphère, composition, intensité, garde-fous |
 | **Génération par IA** | Cloudflare Workers AI (FLUX.1 schnell, offre gratuite) ou OpenAI (`gpt-image-1`), interchangeables |
 | **Mode démonstration** | Sans clé API : images procédurales clairement signalées « sans IA » |
@@ -200,9 +201,10 @@ se trouve dans [**docs/DEPLOIEMENT.md**](docs/DEPLOIEMENT.md).
 ```mermaid
 flowchart LR
     U([Utilisateur]) -->|choix intuitifs| P[Parcours<br/>navigateur]
-    P -->|identifiants uniquement<br/>ex. shape: porte| API["/api/generate<br/>(serveur)"]
+    P -->|identifiants<br/>+ mots libres facultatifs| API["/api/generate<br/>(serveur)"]
     API --> V{Validation<br/>stricte}
-    V --> PR[Générateur<br/>de prompt]
+    V --> T[Traduction<br/>des mots libres]
+    T --> PR[Générateur<br/>de prompt]
     PR --> F{Fournisseur}
     F -->|clé serveur| CF[Cloudflare<br/>Workers AI]
     F -->|clé serveur| OA[OpenAI]
@@ -212,9 +214,11 @@ flowchart LR
     P -.->|si choisi| C[(Collection<br/>sur l'appareil)]
 ```
 
-- **Aucun texte libre n'est envoyé à l'IA :** seulement des identifiants issus d'un
-  catalogue, vérifiés par le serveur. Cela protège la vie privée et empêche l'injection
-  de prompt.
+- **Des choix d'abord, des mots si l'on veut.** Le navigateur envoie des identifiants
+  issus d'un catalogue, vérifiés par le serveur. L'option **« Autre… »** ajoute
+  quelques mots libres (120 caractères au plus, dans n'importe quelle langue). Ils sont
+  nettoyés, traduits en anglais pour le modèle d'image, puis placés entre guillemets
+  dans le prompt, comme une description et jamais comme une consigne.
 - **Le prompt est construit côté serveur.** Exemple, pour *« quelque chose que je ne
   peux pas expliquer + silhouette + verre fissuré + bleu profond + silence »* :
 
@@ -240,8 +244,10 @@ seulement écrites :
 
 - **Aucun compte, aucune donnée personnelle demandée.** Personne n'a à raconter son
   histoire.
-- **Seuls des mots-clés sont transmis** au fournisseur d'IA. La description envoyée est
-  consultable sous chaque image.
+- **Seuls les choix sont transmis** au fournisseur d'IA, avec les quelques mots
+  éventuellement écrits dans « Autre… ». La description envoyée est consultable sous
+  chaque image, et l'interface conseille de ne pas écrire de noms ni d'informations
+  personnelles.
 - **Le serveur ne conserve rien.** Les choix en cours vivent dans l'onglet
   (`sessionStorage`) et disparaissent à sa fermeture.
 - **La collection est privée et désactivée par défaut.** Elle est stockée dans le
@@ -263,7 +269,7 @@ npm run build      # build de production
 ```
 
 Les tests couvrent le générateur de prompts, la résolution du hasard, le rejet de tout
-texte libre, la sélection du fournisseur, les appels Cloudflare et OpenAI (réponses
+texte inattendu, les mots libres (« Autre… ») et leur traduction, la sélection du fournisseur, les appels Cloudflare et OpenAI (réponses
 simulées), toutes les combinaisons du mode démonstration, la route `/api/generate` et le
 limiteur de débit. Le parcours complet a aussi été vérifié dans un navigateur sans
 interface, sur mobile et sur ordinateur.

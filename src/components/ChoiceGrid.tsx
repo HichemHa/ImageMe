@@ -14,6 +14,7 @@ export function ChoiceGrid({
   value,
   onChange,
   layout = "grid",
+  customLabel,
 }: {
   category: CategoryId;
   legend: string;
@@ -21,6 +22,8 @@ export function ChoiceGrid({
   value: string | null;
   onChange: (id: string) => void;
   layout?: "grid" | "list";
+  /** Ajoute une option « Autre… » (valeur "custom"), pour s'exprimer avec ses mots. */
+  customLabel?: string;
 }) {
   const name = `choice-${category}`;
   return (
@@ -33,7 +36,7 @@ export function ChoiceGrid({
             : "grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4"
         }
       >
-        {options.map((option, i) => {
+        {[...options, ...(customLabel ? [{ id: "custom", label: customLabel, prompt: "" }] : [])].map((option, i) => {
           const checked = value === option.id;
           return (
             <label
@@ -62,7 +65,11 @@ export function ChoiceGrid({
                 <span
                   className={`block h-14 w-14 text-paper/85 transition duration-500 sm:h-16 sm:w-16 ${checked ? "scale-110" : "group-hover:scale-105"}`}
                 >
-                  <OptionVisual category={category} id={option.id} />
+                  {option.id === "custom" ? (
+                    <PenGlyph />
+                  ) : (
+                    <OptionVisual category={category} id={option.id} />
+                  )}
                 </span>
               )}
               {layout === "list" && (
@@ -85,5 +92,24 @@ export function ChoiceGrid({
         })}
       </div>
     </fieldset>
+  );
+}
+
+function PenGlyph() {
+  return (
+    <svg
+      viewBox="0 0 64 64"
+      className="h-full w-full"
+      aria-hidden
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.4}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M14 46 C22 38 26 50 34 42 S46 40 50 46" strokeOpacity="0.5" />
+      <path d="M40 14 L48 22 L28 42 L19 45 L22 36 Z" fill="currentColor" fillOpacity="0.12" />
+      <path d="M36 18 L44 26" strokeOpacity="0.6" />
+    </svg>
   );
 }

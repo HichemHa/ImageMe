@@ -3,6 +3,7 @@ import { buildPrompt } from "@/lib/prompt";
 import { getImageProvider, ProviderError } from "@/lib/providers";
 import { createRateLimiter } from "@/lib/rate-limit";
 import { parseGenerationRequest } from "@/lib/selection";
+import { translateTexts } from "@/lib/translate";
 
 export const maxDuration = 60;
 
@@ -50,9 +51,13 @@ export async function POST(request: Request) {
     }
   }
 
-  const { prompt, summary } = buildPrompt(parsed.value);
-
   try {
+    // Les mots libres (toutes langues) sont traduits pour le modèle d'image.
+    const translated = provider.isDemo
+      ? {}
+      : await translateTexts(parsed.value.texts, process.env, AbortSignal.timeout(15_000));
+    const { prompt, summary } = buildPrompt(parsed.value, translated);
+
     const image = await provider.generate({
       prompt,
       request: parsed.value,

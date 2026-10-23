@@ -43,9 +43,17 @@ export default function PrivacyPage() {
             <h2 className="font-serif text-xl text-paper">Ce qui est transmis pour créer une image</h2>
             <p className="mt-2 text-muted">
               Uniquement tes choix (une forme, une couleur, une matière, une
-              atmosphère…), traduits en une courte description artistique. Aucun
-              texte libre, aucune donnée personnelle. Tu peux lire cette
-              description sous chaque image.
+              atmosphère…), traduits en une courte description artistique. Aucune
+              donnée personnelle n&apos;est demandée. Tu peux lire cette description
+              sous chaque image.
+            </p>
+            <p className="mt-2 text-muted">
+              Si tu choisis « Autre… » pour t&apos;exprimer avec tes propres mots,
+              ces quelques mots (120 caractères au plus) font partie de la
+              description. Écrits dans une autre langue que l&apos;anglais, ils sont
+              d&apos;abord traduits par un modèle de langue du même fournisseur.
+              Mieux vaut éviter d&apos;y mettre des noms ou des informations
+              personnelles.
             </p>
             <p className="mt-2 text-muted">
               Service d&apos;images utilisé :{" "}

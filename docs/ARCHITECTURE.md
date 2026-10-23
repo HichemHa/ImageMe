@@ -71,20 +71,37 @@ visuelle dans `components/OptionVisual.tsx` est à prévoir.
 
 ### `lib/selection.ts`, le hasard et la validation
 
-- Un choix vaut `"id"`, `"random"` (le hasard choisit) ou `null` (étape passée).
+- Un choix vaut `"id"`, `"random"` (le hasard choisit), `"custom"` (« Autre… »,
+  avec les mots de l'utilisateur dans `texts`) ou `null` (étape passée).
 - `resolveSelection()` transforme la sélection en choix concrets, avec une graine
   reproductible. Le hasard ne choisit jamais « explorer sans sentiment » à la place de
   l'utilisateur.
 - `parseGenerationRequest()` valide strictement la requête : identifiants connus
-  uniquement, 4 ajustements au maximum, graine entière. **Aucun texte libre n'atteint
-  le fournisseur.**
+  uniquement, 4 ajustements au maximum, graine entière. Les textes libres ne sont
+  acceptés que pour une catégorie valant `"custom"`. Ils sont nettoyés par
+  `sanitizeText()` : caractères de contrôle retirés, guillemets neutralisés,
+  120 caractères au plus.
+
+### `lib/translate.ts`, les mots dans toutes les langues
+
+FLUX comprend surtout l'anglais. Quand le fournisseur est Cloudflare, les mots libres
+sont traduits par un modèle de langue (`@cf/meta/llama-3.1-8b-instruct`, modifiable
+avec `CLOUDFLARE_TEXT_MODEL`), en un seul appel JSON. La réponse est validée : clés
+attendues uniquement, textes nettoyés. En cas d'échec, les mots d'origine sont
+utilisés tels quels. OpenAI comprenant la plupart des langues, aucun appel de
+traduction n'est fait avec ce fournisseur.
+
+Dans le prompt, les mots de l'utilisateur sont toujours **entre guillemets** et
+introduits comme une description (*« as the person described it in their own
+words »*). Le résumé affiché sous l'image garde les mots d'origine, dans la langue de
+l'utilisateur.
 
 ### `lib/prompt.ts`, le générateur de prompts
 
 Le prompt suit toujours le même ordre :
 
 1. **style** (photographie poétique, surréalisme, abstrait, collage, minimaliste, organique) ;
-2. **sujet** (la forme choisie, ou « un paysage intérieur ouvert ») ;
+2. **sujet** (la forme choisie, les mots de l'utilisateur, ou « un paysage intérieur ouvert ») ;
 3. **ressenti suggéré**, *« suggested through mood rather than shown literally »* ;
 4. **matière**, **palette**, **atmosphère** ;
 5. **composition** (centrée, décentrée, horizon bas, cadrage intime, vu de loin) ;
@@ -135,11 +152,12 @@ besoin, le code HTTP.
     "feeling": "incompris" | null,
     "shape": "silhouette" | null,
     "color": "bleu" | null,
-    "texture": "verre" | null,
+    "texture": "verre" | "custom" | null,
     "atmosphere": "silence" | null,
     "style": "photo",          // obligatoire
     "composition": "centre"    // obligatoire
   },
+  "texts": { "texture": "la peau d'une orange" }, // seulement pour les "custom"
   "adjustments": ["plus-doux"], // 0 à 4
   "seed": 123456789             // entier 0 à 2^32-1
 }
@@ -158,7 +176,7 @@ besoin, le code HTTP.
 
 | Donnée | Emplacement | Durée |
 |---|---|---|
-| Choix en cours et étape | `sessionStorage` (`sans-mots:journey`) | Jusqu'à la fermeture de l'onglet |
+| Choix en cours, mots libres et étape | `sessionStorage` (`sans-mots:journey`) | Jusqu'à la fermeture de l'onglet |
 | Préférence « collection activée » | `localStorage` | Jusqu'à désactivation |
 | Images gardées | IndexedDB (`sans-mots` / `creations`) | Jusqu'à suppression par l'utilisateur |
 
@@ -166,7 +184,10 @@ besoin, le code HTTP.
 
 - Les clés API ne sont lues que côté serveur, via `process.env`, sans préfixe
   `NEXT_PUBLIC_`.
-- Les requêtes sont validées sur liste blanche, ce qui empêche l'injection de prompt.
+- Les requêtes sont validées sur liste blanche. Les seuls textes libres sont courts,
+  nettoyés, traduits sous contrôle et cités entre guillemets dans le prompt : ils
+  peuvent décrire une image, pas changer les consignes. La modération reste celle du
+  fournisseur d'images.
 - La limite de débit est appliquée par IP (en mémoire, au mieux de chaque instance).
 - En-têtes de sécurité (`next.config.ts`) : `X-Content-Type-Options`,
   `Referrer-Policy: no-referrer`, `X-Frame-Options: DENY`, `Permissions-Policy`.
